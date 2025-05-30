@@ -19,11 +19,11 @@ def detect_language(text):
 @st.cache_resource(show_spinner=False)
 def load_model_for_lang(lang):
     if lang == "ko":
-        tokenizer = AutoTokenizer.from_pretrained("beomi/KcELECTRA-base-v2022")
-        model = AutoModelForSequenceClassification.from_pretrained("beomi/KcELECTRA-base-v2022")
+        tokenizer = AutoTokenizer.from_pretrained("nlp04/korean-sentiment-bert")
+        model = AutoModelForSequenceClassification.from_pretrained("nlp04/korean-sentiment-bert")
     elif lang == "en":
-        tokenizer = AutoTokenizer.from_pretrained("j-hartmann/emotion-english-distilroberta-base")
-        model = AutoModelForSequenceClassification.from_pretrained("j-hartmann/emotion-english-distilroberta-base")
+        tokenizer = AutoTokenizer.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
+        model = AutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
     else:
         return None, None
     return tokenizer, model
@@ -47,26 +47,16 @@ def predict_sentiment(text):
         probs = F.softmax(logits, dim=1).numpy()[0]
 
     if lang == 'ko':
-        positive_label = 1
-        result = "긍정" if probs[positive_label] > probs[1 - positive_label] else "부정"
-        confidence = abs(probs[positive_label] - probs[1 - positive_label])
+        result = "긍정" if probs[1] > probs[0] else "부정"
+        confidence = abs(probs[1] - probs[0])
+    elif lang == 'en':
+        label_map = {0: "부정", 1: "중립", 2: "긍정"}
+        predicted_label = int(probs.argmax())
+        result = label_map.get(predicted_label, "알 수 없음")
+        confidence = probs[predicted_label]
     else:
-        labels = [
-            "admiration", "amusement", "anger", "annoyance", "approval", "caring", "confusion",
-            "curiosity", "desire", "disappointment", "disapproval", "disgust", "embarrassment",
-            "excitement", "fear", "gratitude", "grief", "joy", "love", "nervousness", "optimism",
-            "pride", "realization", "relief", "remorse", "sadness", "surprise"
-        ]
-        labels = labels[:len(probs)]
-        emotion_scores = {labels[i]: probs[i] for i in range(len(labels))}
-
-        positive_emotions = ["joy", "love", "surprise"]
-        negative_emotions = ["anger", "sadness", "fear", "disgust", "disappointment", "remorse", "grief", "disapproval", "embarrassment", "annoyance", "nervousness"]
-
-        pos_score = sum([emotion_scores[e] for e in positive_emotions if e in emotion_scores])
-        neg_score = sum([emotion_scores[e] for e in negative_emotions if e in emotion_scores])
-        result = "긍정" if pos_score >= neg_score else "부정"
-        confidence = abs(pos_score - neg_score)
+        result = "언어 감지 실패"
+        confidence = 0.0
 
     return result, confidence, lang
 
