@@ -19,8 +19,8 @@ def detect_language(text):
 @st.cache_resource(show_spinner=False)
 def load_model_for_lang(lang):
     if lang == "ko":
-        tokenizer = AutoTokenizer.from_pretrained("nlp04/korean-sentiment-bert")
-        model = AutoModelForSequenceClassification.from_pretrained("nlp04/korean-sentiment-bert")
+        tokenizer = AutoTokenizer.from_pretrained("beomi/KcELECTRA-base-finetuned-nsmc")
+        model = AutoModelForSequenceClassification.from_pretrained("beomi/KcELECTRA-base-finetuned-nsmc")
     elif lang == "en":
         tokenizer = AutoTokenizer.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
         model = AutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
@@ -49,6 +49,7 @@ def predict_sentiment(text):
     if lang == 'ko':
         result = "긍정" if probs[1] > probs[0] else "부정"
         confidence = abs(probs[1] - probs[0])
+    
     elif lang == 'en':
         label_map = {0: "부정", 1: "중립", 2: "긍정"}
         predicted_label = int(probs.argmax())
